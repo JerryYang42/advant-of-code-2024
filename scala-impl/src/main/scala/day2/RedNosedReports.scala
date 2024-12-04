@@ -7,29 +7,29 @@ class Report(levels: Seq[Int]) {
     (isInAscendingOrder || isInDescendingOrder) && allGapsWithinRange(1, 3)
   }
 
-  def isNearlySafe: Boolean = {
-    findFirstRemovableLevel match {
-      case Some(removableLevel) =>
-        val levelsWithoutRemovableLevel = levels.patch(removableLevel, Nil, 1)
-      case None =>
-        isSafe
-    }
-
-  }
-  private def findFirstRemovableLevel: Option[Int] = {
-    val offset = 1
-    val maybeRemovableLevel: Int = levels
-      .sliding(3)
-      .map { case Seq(a, b, c) => (a - b) * (b - c) < 0 }
-      .indexOf(true)
-
-    maybeRemovableLevel match {
-      case -1 => // Not found
-        None
-      case removableLevel =>
-        Some(removableLevel + offset)
-    }
-  }
+//  def isNearlySafe: Boolean = {
+//    findFirstRemovableLevel match {
+//      case Some(removableLevel) =>
+//        val levelsWithoutRemovableLevel = levels.patch(removableLevel, Nil, 1)
+//      case None =>
+//        isSafe
+//    }
+//
+//  }
+//  private def findFirstRemovableLevel: Option[Int] = {
+//    val offset = 1
+//    val maybeRemovableLevel: Int = levels
+//      .sliding(3)
+//      .map { case Seq(a, b, c) => (a - b) * (b - c) < 0 }
+//      .indexOf(true)
+//
+//    maybeRemovableLevel match {
+//      case -1 => // Not found
+//        None
+//      case removableLevel =>
+//        Some(removableLevel + offset)
+//    }
+//  }
 
   // remove the index-th level from the seq and return the new seq
   private[day2] def remove(index: Int): Seq[Int] = {

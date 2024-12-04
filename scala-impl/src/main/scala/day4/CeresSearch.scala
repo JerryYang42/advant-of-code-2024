@@ -38,7 +38,7 @@ case class Elem(value: Char)
 //}
 
 
-object MainDay4 extends App {
+object MainDay4 {
   def main(args: Array[String]): Unit = {
     print("Hello, world!")
   }
