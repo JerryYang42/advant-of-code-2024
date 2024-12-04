@@ -1,11 +1,39 @@
-package main
+package day2
 
-import java.io.File
 import scala.io.Source
 
 class Report(levels: Seq[Int]) {
   def isSafe: Boolean = {
     (isInAscendingOrder || isInDescendingOrder) && allGapsWithinRange(1, 3)
+  }
+
+  def isNearlySafe: Boolean = {
+    findFirstRemovableLevel match {
+      case Some(removableLevel) =>
+        val levelsWithoutRemovableLevel = levels.patch(removableLevel, Nil, 1)
+      case None =>
+        isSafe
+    }
+
+  }
+  private def findFirstRemovableLevel: Option[Int] = {
+    val offset = 1
+    val maybeRemovableLevel: Int = levels
+      .sliding(3)
+      .map { case Seq(a, b, c) => (a - b) * (b - c) < 0 }
+      .indexOf(true)
+
+    maybeRemovableLevel match {
+      case -1 => // Not found
+        None
+      case removableLevel =>
+        Some(removableLevel + offset)
+    }
+  }
+
+  // remove the index-th level from the seq and return the new seq
+  private[day2] def remove(index: Int): Seq[Int] = {
+    levels.patch(index, Nil, 1)
   }
 
   private def isInAscendingOrder: Boolean = levels == levels.sorted
@@ -65,9 +93,9 @@ object RedNosedReports {
   }
 }
 
-object Main {
+object MainDay2 {
   def main(args: Array[String]): Unit = {
-    val filepath = "scala-impl/resource/reports_of_levels.txt"
+    val filepath = "scala-impl/resource/day2/reports_of_levels.txt"
     val reports = Reader.read(filepath)
     val safeReports = RedNosedReports.analyse(reports)
     println(safeReports)
