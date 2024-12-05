@@ -32,14 +32,18 @@ object Elem {
     }
   }
 }
+case class Pattern(pattern: Array[Elem]) {
+  def length: Int = pattern.length
+}
+object Pattern {
+  def apply(patternString: String): Pattern = {
+    new Pattern(patternString.map(char => Elem(char)).toArray)
+  }
+}
 
 case class Point(x: Int, y: Int)
 
 case class Matrix[Elem](data: Array[Array[Elem]]) {
-//  override def toString: String = {
-//    data.map(row => row.map(_.value).mkString).mkString("\n")
-//  }
-
   def get(point: Point): Elem = {
     data(point.x)(point.y)
   }
@@ -80,25 +84,9 @@ object CeresSearch {
    * @return the occurrence of the word in the matrix
    */
   def searchWord(word: String = "XMAS", matrix: Matrix[Elem]): Int = {
-    // if the word is empty, return 0
-    if (word.isEmpty) {
-      return 0
-    }
-    // if the matrix is empty, return 0
-    if (matrix.data.isEmpty) {
-      return 0
-    }
-    // if the word outsized the matrix, return 0
-    val maxSizeOfMatrix = {
-      val height = matrix.data.length
-      val weight = matrix.data.head.length
-      Math.max(height, weight)
-    }
-    if (word.length > maxSizeOfMatrix) {
-      return 0
-    }
+    validateBoundary(word, matrix)
 
-    val pattern: Array[Elem] = word.map(char => Elem(char)).toArray
+    val pattern = Pattern(word)
     val pointDirections = for {
       point <- matrix.allPoints
       direction <- directions
@@ -118,6 +106,70 @@ object CeresSearch {
 
     matchedPointDirections.length
   }
+
+  /**
+   * search for a word in a matrix, This word currently only supports "MAS"
+   *
+   * @param word the word to search
+   * @param matrix the matrix to search in
+   * @return
+   */
+  def searchXShapedWord(word: String = "MAS", matrix: Matrix[Elem]): Int = {
+    validateBoundary(word, matrix)
+    if (word != "MAS") {
+      throw new IllegalArgumentException("Word must be MAS")
+    }
+
+    val height = matrix.data.length
+    val weight = matrix.data.head.length
+    val pointsInBound = matrix.allPoints.filter { point =>
+      diagnalDirections.map(direction => {
+        val endPoint = Point(point.x + direction.dx, point.y + direction.dy)
+        pointWithinBounds(endPoint, height, weight)
+      }).forall(identity)
+    }
+    val pattern: Array[Elem] = word.map(char => Elem(char)).toArray
+    val matchedPoints = pointsInBound.filter { point =>
+      findMatchForCenterPointDiagnallyInMatrix(pattern, matrix, point)
+    }
+    matchedPoints.length
+  }
+
+  private val diagnalDirections = Seq(DiagonalDownRight, DiagonalDownLeft, DiagonalUpRight, DiagonalUpLeft)
+
+  private def findMatchForCenterPointDiagnallyInMatrix(pattern: Array[Elem], matrix: Matrix[Elem], centerPoint: Point): Boolean = {
+    val height = matrix.data.length
+    val weight = matrix.data.head.length
+    val (x, y) = (centerPoint.x, centerPoint.y)
+    diagnalDirections.map { direction =>
+      val (dx, dy) = (direction.dx, direction.dy)
+      pattern.zip(Seq(1, 0, -1)).forall { case (elem, i) =>
+        val (newX, newY) = (x + i * dx, y + i * dy)
+        matrix.get(Point(newX, newY)) == elem
+      }
+    }.count(identity) == 2
+  }
+
+  private def validateBoundary(word: String, matrix: Matrix[Elem]): Unit = {
+    // if the word is empty, return 0
+    if (word.isEmpty) {
+      throw new IllegalArgumentException("Word must not be empty")
+    }
+    // if the matrix is empty, return 0
+    if (matrix.data.isEmpty) {
+      throw new IllegalArgumentException("Matrix must not be empty")
+    }
+    // if the word outsized the matrix, return 0
+    val maxSizeOfMatrix = {
+      val height = matrix.data.length
+      val weight = matrix.data.head.length
+      Math.max(height, weight)
+    }
+    if (word.length > maxSizeOfMatrix) {
+      throw new IllegalArgumentException("Word must not be larger than the matrix")
+    }
+  }
+
 
   trait Direction {
     def dx: Int
@@ -160,12 +212,12 @@ object CeresSearch {
   private val pointWithinBounds: (Point, Int, Int) => Boolean = (point, height, width) => {
     point.x >= 0 && point.x < width && point.y >= 0 && point.y < height
   }
-  private val directionsWithExactMatch: (Array[Elem], Matrix[Elem], Point, Direction) => Boolean = (pattern, matrix, startingPoint, direction) => {
+  private val directionsWithExactMatch: (Pattern, Matrix[Elem], Point, Direction) => Boolean = (pattern, matrix, startingPoint, direction) => {
     val height = matrix.data.length
     val weight = matrix.data.head.length
     val (x, y) = (startingPoint.x, startingPoint.y)
     val (dx, dy) = (direction.dx, direction.dy)
-    pattern.zipWithIndex.forall { case (elem, i) =>
+    pattern.pattern.zipWithIndex.forall { case (elem, i) =>
       val (newX, newY) = (x + i * dx, y + i * dy)
       matrix.get(Point(newX, newY)) == elem
     }
@@ -175,10 +227,11 @@ object CeresSearch {
 
 object MainDay4 {
   def main(args: Array[String]): Unit = {
-    //    val mat = Matrix[Elem]("MA\nCA")
     val filepath = "src/main/resources/day4/large-matrix.txt"
     val mat = Reader.read(filepath)
     val matches = CeresSearch.searchWord("XMAS", mat)
-    print("matches: ", matches)
+    println(s"XMAS matches: $matches")
+    val matchesX = CeresSearch.searchXShapedWord("MAS", mat)
+    println(s"X-MAS matches: $matchesX")
   }
 }
