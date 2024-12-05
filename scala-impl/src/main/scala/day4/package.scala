@@ -75,6 +75,8 @@ package object day4 {
 
   case class Point(x: Int, y: Int)
 
+  case class Dimension(width: Int, height: Int)
+
   case class Matrix[Elem](data: Array[Array[Elem]]) {
     def get(point: Point): Elem = {
       data(point.x)(point.y)
@@ -86,6 +88,10 @@ package object day4 {
         x <- data(y).indices
       } yield Point(x, y)
     }
+
+    val height: Int = data.length
+    val width: Int = data.head.length
+    val dimension: Dimension = Dimension(width, height)
   }
 
   object Matrix {

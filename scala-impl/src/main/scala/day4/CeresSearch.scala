@@ -29,20 +29,13 @@ object CeresSearch {
     validateBoundary(word, matrix)
 
     val pattern = Pattern(word)
-    val pointDirections = for {
+
+    val matchedPointDirections = for {
       point <- matrix.allPoints
       direction <- allDirections
+      if isInboundSequence(point, pattern.length, direction, matrix.dimension)
+      if pattern.`match`(matrix, point, direction)
     } yield (point, direction)
-
-    val height = matrix.data.length
-    val width = matrix.data.head.length
-    val inboundPointDirections = pointDirections.filter { case (point, direction) =>
-      isInboundSequence(point, pattern.length, direction, height, width)
-    }
-
-    val matchedPointDirections = inboundPointDirections.filter { case (point, direction) =>
-      pattern.`match`(matrix, point, direction)
-    }
 
     matchedPointDirections.length
   }
@@ -60,11 +53,9 @@ object CeresSearch {
       throw new IllegalArgumentException("Word must be MAS")
     }
 
-    val height = matrix.data.length
-    val width = matrix.data.head.length
     val padding: Int = word.length / 2
     val pointsInBound = matrix.allPoints.filter { startingPoint =>
-      isInboundCentralPoint(startingPoint, padding, height, width)
+      isInboundCentralPoint(startingPoint, padding, matrix.dimension)
     }
     val pattern = Pattern(word)
     val matchedPoints = pointsInBound.filter { point =>
@@ -92,23 +83,23 @@ object CeresSearch {
     }
   }
 
-  private def isInboundSequence(startingPoint: Point, strLength: Int, direction: Direction, height: Int, width: Int): Boolean = {
+  private def isInboundSequence(startingPoint: Point, strLength: Int, direction: Direction, dimension: Dimension): Boolean = {
     val endX = startingPoint.x + (strLength - 1) * direction.dx
     val endY = startingPoint.y + (strLength - 1) * direction.dy
-    isInboundPoint(Point(endX, endY), height, width)
+    isInboundPoint(Point(endX, endY), dimension)
   }
 
-  private def isInboundCentralPoint(startingPoint: Point, padding: Int, height: Int, width: Int): Boolean = {
+  private def isInboundCentralPoint(startingPoint: Point, padding: Int, dimension: Dimension): Boolean = {
     val cornerPoints = diagonalDirections.map(direction => {
       Point(startingPoint.x + padding * direction.dx, startingPoint.y + padding * direction.dy)
     })
     cornerPoints.map { endPoint =>
-      isInboundPoint(endPoint, height, width)
+      isInboundPoint(endPoint, dimension)
     }.forall(identity)
   }
 
-  private def isInboundPoint(point: Point, height: Int, width: Int): Boolean = {
-    point.x >= 0 && point.x < width && point.y >= 0 && point.y < height
+  private def isInboundPoint(point: Point, dimension: Dimension): Boolean = {
+    point.x >= 0 && point.x < dimension.width && point.y >= 0 && point.y < dimension.height
   }
 }
 
