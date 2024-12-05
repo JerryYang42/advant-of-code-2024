@@ -3,3 +3,7 @@
 out/
 scala-impl/.idea/
 scala-impl/project/
+
+.DS_Store
+
+.history/
