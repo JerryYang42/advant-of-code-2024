@@ -1,5 +1,6 @@
 package day4
 
+import day4.BoundaryChecker.{isInboundCentralPoint, isInboundSequence}
 import day4.Direction.{allDirections, diagonalDirections}
 
 import scala.io.Source
@@ -8,8 +9,8 @@ import scala.language.postfixOps
 object Reader {
   def read(filepath: String): Matrix[Elem] = {
     val source = Source.fromFile(filepath)
-    val mazeString = source.mkString
-    Matrix(mazeString)
+    val matrixString = source.mkString
+    Matrix(matrixString)
   }
 }
 
@@ -29,13 +30,14 @@ object CeresSearch {
     validateBoundary(word, matrix)
 
     val pattern = Pattern(word)
+    val armReach = pattern.length - 1
 
     val matchedPointDirections = for {
-      point <- matrix.allPoints
+      startingPoint <- matrix.allPoints
       direction <- allDirections
-      if isInboundSequence(point, pattern.length, direction, matrix.dimension)
-      if pattern.`match`(matrix, point, direction)
-    } yield (point, direction)
+      if isInboundSequence(DirectedVector(startingPoint, Vector(armReach, direction)), matrix.dimension)
+      if pattern.`match`(matrix, startingPoint, direction)
+    } yield (startingPoint, direction)
 
     matchedPointDirections.length
   }
@@ -54,14 +56,12 @@ object CeresSearch {
     }
 
     val padding: Int = word.length / 2
-    val pointsInBound = matrix.allPoints.filter { startingPoint =>
-      isInboundCentralPoint(startingPoint, padding, matrix.dimension)
-    }
-    val pattern = Pattern(word)
-    val matchedPoints = pointsInBound.filter { point =>
-      pattern.matchX(matrix, point)
-    }
-    matchedPoints.length
+    val matchedXShapedPoints = for {
+      centralPoint <- matrix.allPoints
+      if isInboundCentralPoint(centralPoint, padding, matrix.dimension)
+      if Pattern(word).matchX(matrix, centralPoint)
+    } yield centralPoint
+    matchedXShapedPoints.length
   }
 
   private def validateBoundary(word: String, matrix: Matrix[Elem]): Unit = {
@@ -73,33 +73,9 @@ object CeresSearch {
       throw new IllegalArgumentException("Matrix must not be empty")
     }
 
-    val maxSizeOfMatrix = {
-      val height = matrix.data.length
-      val width = matrix.data.head.length
-      Math.max(height, width)
-    }
-    if (word.length > maxSizeOfMatrix) {
+    if (word.length > matrix.diameter) {
       throw new IllegalArgumentException("Word must not be larger than the matrix")
     }
-  }
-
-  private def isInboundSequence(startingPoint: Point, strLength: Int, direction: Direction, dimension: Dimension): Boolean = {
-    val endX = startingPoint.x + (strLength - 1) * direction.dx
-    val endY = startingPoint.y + (strLength - 1) * direction.dy
-    isInboundPoint(Point(endX, endY), dimension)
-  }
-
-  private def isInboundCentralPoint(startingPoint: Point, padding: Int, dimension: Dimension): Boolean = {
-    val cornerPoints = diagonalDirections.map(direction => {
-      Point(startingPoint.x + padding * direction.dx, startingPoint.y + padding * direction.dy)
-    })
-    cornerPoints.map { endPoint =>
-      isInboundPoint(endPoint, dimension)
-    }.forall(identity)
-  }
-
-  private def isInboundPoint(point: Point, dimension: Dimension): Boolean = {
-    point.x >= 0 && point.x < dimension.width && point.y >= 0 && point.y < dimension.height
   }
 }
 
