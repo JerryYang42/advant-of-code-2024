@@ -6,6 +6,7 @@ case class Monomer(value: Char) {
   def reactsWith(that: Monomer): Boolean = {
     this.value != that.value && this.value.toLower == that.value.toLower
   }
+  def depolarised: Monomer = Monomer(value.toLower)
 }
 
 case class Polymer(value: Array[Monomer]) {
@@ -19,6 +20,19 @@ case class Polymer(value: Array[Monomer]) {
     } else {
       this
     }
+  }
+
+  def reactWithOneTypeOfMonomersRemoved(): Polymer = {
+    uniqueMonomers.map { monomer =>
+      removeAllMonomers(monomer).react()
+    }.minBy(_.value.length)
+  }
+
+  private def uniqueMonomers: Set[Monomer] = value.map(_.depolarised).toSet
+
+  private def removeAllMonomers(monomer: Monomer): Polymer = {
+    val newValue = value.filterNot(_.value.toLower == monomer.value.toLower)
+    Polymer(newValue)
   }
 
   private def isReactive: Boolean = {
@@ -49,7 +63,7 @@ object Reader {
 object AlchemicalReduction {
   def main(args: Array[String]): Unit = {
     val polymer = Reader.readPolymer()
-//    println(s"The original polymer: $polymer")
     println(s"The reacted polymer have length:  ${polymer.react().value.length}")
+    println(s"The reacted polymer with one type of monomers removed have length:  ${polymer.reactWithOneTypeOfMonomersRemoved().value.length}")
   }
 }
