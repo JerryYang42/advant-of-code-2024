@@ -3,64 +3,7 @@ package day6
 import day4.Direction.diagonalDirections
 
 import scala.annotation.targetName
-//
-//trait Elem {
-//  def value: Char
-//}
-//object X extends Elem {
-//  override def value: Char = 'X'
-//}
-//object M extends Elem {
-//  override def value: Char = 'M'
-//}
-//object A extends Elem {
-//  override def value: Char = 'A'
-//}
-//object S extends Elem {
-//  override def value: Char = 'S'
-//}
-//object IrrelevantElem extends Elem {
-//  override def value: Char = '.'
-//}
-//object Elem {
-//  def apply(char: Char): Elem = {
-//    char match {
-//      case 'X' => X
-//      case 'M' => M
-//      case 'A' => A
-//      case 'S' => S
-//      case '.' => IrrelevantElem
-//      case _ => throw new IllegalArgumentException(s"Invalid character: $char")
-//    }
-//  }
-//}
-//
-//case class Pattern(pattern: Array[Elem]) {
-//  def length: Int = pattern.length
-//
-//  def `match`(matrix: Matrix[Elem], startingPoint: Point, direction: Direction): Boolean = {
-//    val (x, y) = (startingPoint.x, startingPoint.y)
-//    val (dx, dy) = (direction.dx, direction.dy)
-//    pattern.zipWithIndex.forall { case (elem, i) =>
-//      val (newX, newY) = (x + i * dx, y + i * dy)
-//      matrix.get(newX, newY) == elem
-//    }
-//  }
-//
-//  def matchX(matrix: Matrix[Elem], point: Point): Boolean = {
-//    val center = CentralPoint(point.x, point.y)
-//    val radius = pattern.length / 2
-//    center.diagonalEndPoints(radius).count { (point, direction) =>
-//      `match`(matrix, point, direction.opposite)
-//    } == 2
-//  }
-//}
-//
-//object Pattern {
-//  def apply(patternString: String): Pattern = {
-//    new Pattern(patternString.map(char => Elem(char)).toArray)
-//  }
-//}
+
 
 case class Point(x: Int, y: Int) {
   def +(vector: Vector): Point = Point(x + vector.dx, y + vector.dy)
@@ -78,8 +21,8 @@ class CentralPoint(x: Int, y: Int) extends Point(x, y) {
 
 case class Dimension(width: Int, height: Int)
 
-case class Matrix[Elem](data: Array[Array[Elem]]) {
-  def get(x: Int, y: Int): Elem = {
+case class Matrix[T](data: Array[Array[T]]) {
+  def get(x: Int, y: Int): T = {
     data(x)(y)
   }
 
@@ -96,23 +39,6 @@ case class Matrix[Elem](data: Array[Array[Elem]]) {
   val diameter: Int = Math.max(width, height)
 }
 
-object Matrix {
-  /**
-   * Create a matrix from a string
-   * The string should be in the format of
-   * M.S
-   * .A.
-   * M.S
-   * @param matrix the string representation of the matrix
-   * @tparam T the type of the element in the matrix
-   * @return
-   */
-  def apply[T](matrix: String): Matrix[Elem] = {
-    val data = matrix.split("\n").map(row => row.map(char => Elem(char)).toArray)
-    data.ensuring(mat => mat.forall(row => row.length == data.head.length), "All rows must have the same length")
-    new Matrix(data)
-  }
-}
 
 trait Direction {
   def dx: Int
