@@ -23,7 +23,7 @@ class Guard(private val initialPosition: Point, private val initialDirection: Di
       }
     }
   }
-  def moveOneStep(map: LabMap): Unit = {
+  private def moveOneStep(map: LabMap): Unit = {
     val nextTile = map.get(intendedNextPosition)
     nextTile match {
       case Obstruction =>
@@ -47,14 +47,15 @@ class Guard(private val initialPosition: Point, private val initialDirection: Di
 case class LabMap(tiles: Matrix[Tile]) {
   def get(position: Point): Tile = tiles.get(position.x, position.y)
 
-  override def toString: String = {
-    tiles.data.map { row =>
+  def toReprV1: LabMapRepresentation = {
+    val lines = tiles.data.map { row =>
       row.map {
         case Obstruction => "#"
-        case Space(true) => "X"
+        case Space(true) => "v"
         case Space(false) => "."
       }.mkString("")
-    }.mkString("\n")
+    }
+    LabMapRepresentation(lines)
   }
 
   def numberOfVisitedSpaces: Int = {
@@ -85,7 +86,7 @@ object LabMap {
   }
 }
 
-case class LabMapRepresentation(lines: List[String]) {
+case class LabMapRepresentation(lines: Array[String]) {
   def initGuard(): Guard = {
     val guards = lines.zipWithIndex.map { case (line, y) =>
       line.zipWithIndex.map { case (char, x) =>
@@ -100,12 +101,14 @@ case class LabMapRepresentation(lines: List[String]) {
     }
     guards.flatten.filter(_ != null).head
   }
+
+  override def toString: String = lines.mkString("\n")
 }
 
 object Reader {
   def read(filepath: String): LabMapRepresentation = {
     val bufferedSource = io.Source.fromResource(filepath)
-    val lines = (for (line <- bufferedSource.getLines()) yield line).toList
+    val lines = (for (line <- bufferedSource.getLines()) yield line).toArray
     bufferedSource.close
     LabMapRepresentation(lines)
   }
@@ -118,17 +121,19 @@ object BoundaryChecker {
 }
 
 object GuardGallivant {
-  def patrolRouteCoverage(): Unit = {
-    val labMapRepr = Reader.read("day6/puzzle-input.txt")
+  def patrolRouteCoverage(filepath: String): Unit = {
+    val labMapRepr = Reader.read(filepath)
     val labMap = LabMap(labMapRepr)
     val guard = labMapRepr.initGuard()
     guard.move(labMap)
-    println(s"Number of distinct positions the guard visited on the map: ${labMap.numberOfVisitedSpaces}")
+    println(s"Number of distinct positions the guard visited on the map: ${labMap.toReprV1}")
   }
+
+  def findAllLoopingRouteAfterAddingOneObstacle(filepath: String): Unit = ???
 }
 
 object Main {
   def main(args: Array[String]): Unit = {
-    GuardGallivant.patrolRouteCoverage()
+    GuardGallivant.patrolRouteCoverage("day6/puzzle-input.txt")
   }
 }
