@@ -23,7 +23,7 @@ case class Dimension(width: Int, height: Int)
 
 case class Matrix[T](data: Array[Array[T]]) {
   def get(x: Int, y: Int): T = {
-    data(x)(y)
+    data(y)(x)
   }
 
   def allPoints: Seq[Point] = {

@@ -8,21 +8,28 @@ case class Space(private var visited: Boolean = false) extends Tile {
 
 trait Character extends Tile {
   def position: Point
-  def nextPosition(map: LabMap): Point
+  def move(map: LabMap): Unit
 }
 class Guard(private val initialPosition: Point, private val initialDirection: Direction) extends Character {
   private var currentPosition: Point = initialPosition
   private var currentDirection: Direction = initialDirection
   override def position: Point = position
-  override def nextPosition(map: LabMap): Point = {
+  override def move(map: LabMap): Unit = {
+    while (!BoundaryChecker.isOutOfBounds(intendedNextPosition, map.tiles.dimension)) {
+      moveOneStep(map)
+      val currentTile = map.get(currentPosition)
+      currentTile match {
+        case Space(_) => currentTile.asInstanceOf[Space].markVisited()
+      }
+    }
+  }
+  def moveOneStep(map: LabMap): Unit = {
     val nextTile = map.get(intendedNextPosition)
     nextTile match {
       case Obstruction =>
         turnRight()
-        currentPosition
       case Space(_) =>
         stepForward()
-        currentPosition
       case _ => throw new Exception(s"Invalid tile ${nextTile.getClass}")
     }
   }
@@ -37,8 +44,27 @@ class Guard(private val initialPosition: Point, private val initialDirection: Di
   }
 }
 
-case class LabMap(private val tiles: Matrix[Tile]) {
+case class LabMap(tiles: Matrix[Tile]) {
   def get(position: Point): Tile = tiles.get(position.x, position.y)
+
+  override def toString: String = {
+    tiles.data.map { row =>
+      row.map {
+        case Obstruction => "#"
+        case Space(true) => "X"
+        case Space(false) => "."
+      }.mkString("")
+    }.mkString("\n")
+  }
+
+  def numberOfVisitedSpaces: Int = {
+    tiles.data.map { row =>
+      row.count {
+        case Space(true) => true
+        case _ => false
+      }
+    }.sum
+  }
 }
 object LabMap {
   def apply(labMapRepr: LabMapRepresentation): LabMap = {
@@ -77,23 +103,32 @@ case class LabMapRepresentation(lines: List[String]) {
 }
 
 object Reader {
-  def read(): LabMapRepresentation = {
-    val bufferedSource = io.Source.fromFile("src/resources/input_day6.txt")
+  def read(filepath: String): LabMapRepresentation = {
+    val bufferedSource = io.Source.fromResource(filepath)
     val lines = (for (line <- bufferedSource.getLines()) yield line).toList
     bufferedSource.close
     LabMapRepresentation(lines)
   }
 }
 
-//object GuardGallivant {
-//
-//}
+object BoundaryChecker {
+  def isOutOfBounds(point: Point, dimension: Dimension): Boolean = {
+    point.x < 0 || point.x >= dimension.width || point.y < 0 || point.y >= dimension.height
+  }
+}
+
+object GuardGallivant {
+  def patrolRouteCoverage(): Unit = {
+    val labMapRepr = Reader.read("day6/puzzle-input.txt")
+    val labMap = LabMap(labMapRepr)
+    val guard = labMapRepr.initGuard()
+    guard.move(labMap)
+    println(s"Number of distinct positions the guard visited on the map: ${labMap.numberOfVisitedSpaces}")
+  }
+}
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val labMapRepr = Reader.read()
-    val labMap = LabMap(labMapRepr)
-    val guard = labMapRepr.initGuard()
-
+    GuardGallivant.patrolRouteCoverage()
   }
 }
