@@ -26,7 +26,7 @@ trait Character extends Tile {
 class Guard(private val initialPosition: Point, private val initialDirection: Direction) extends Character {
   private var currentPosition: Point = initialPosition
   private var currentDirection: Direction = initialDirection
-  override def position: Point = position
+  override def position: Point = currentPosition
   override def move(map: LabMap): MovementResult = {
     while (!BoundaryChecker.isOutOfBounds(intendedNextPosition, map.tiles.dimension)) {
       moveOneStep(map)
@@ -61,10 +61,13 @@ class Guard(private val initialPosition: Point, private val initialDirection: Di
     case Up => Right
     case _ => throw new Exception(s"Invalid direction $currentDirection")
   }
+
+  def copy(): Guard = new Guard(currentPosition, currentDirection)
 }
 
 case class LabMap(tiles: Matrix[Tile]) {
   def get(position: Point): Tile = tiles.get(position.x, position.y)
+  def set(position: Point, tile: Tile): Unit = tiles.data(position.y)(position.x) = tile
 
   def toReprV1: LabMapRepresentation = {
     val lines = tiles.data.map { row =>
@@ -76,6 +79,7 @@ case class LabMap(tiles: Matrix[Tile]) {
           case Some(Left) => "<"
           case Some(Up) => "^"
           case None => "."
+          case Some(_) => throw new Exception("Invalid direction")
         }
       }.mkString("")
     }
@@ -89,6 +93,28 @@ case class LabMap(tiles: Matrix[Tile]) {
         case _ => false
       }
     }.sum
+  }
+
+  def spacesPositions: Seq[Point] = {
+    tiles.data.zipWithIndex.flatMap { case (row, y) =>
+      row.zipWithIndex.collect {
+        case (Space(_), x) => Point(x, y)
+      }
+    }
+  }
+
+  def newMutantByAddingOneObstacle(position: Point): LabMap = {
+    val copy = deepCopy()
+    copy.set(position, Obstruction)
+    copy
+  }
+
+  private def deepCopy(): LabMap = {
+    val newTiles: Array[Array[Tile]] = tiles.data.map(_.map {
+      case Obstruction => Obstruction
+      case space: Space => space.copy()
+    })
+    new LabMap(Matrix[Tile](newTiles))
   }
 }
 object LabMap {
@@ -138,11 +164,6 @@ object Reader {
   }
 }
 
-object BoundaryChecker {
-  def isOutOfBounds(point: Point, dimension: Dimension): Boolean = {
-    point.x < 0 || point.x >= dimension.width || point.y < 0 || point.y >= dimension.height
-  }
-}
 
 object GuardGallivant {
   def patrolRouteCoverage(filepath: String): Unit = {
@@ -153,10 +174,29 @@ object GuardGallivant {
     println(s"Number of distinct positions the guard visited on the map: ${labMap.toReprV1}")
   }
 
-//  def findAllLoopingRouteAfterAddingOneObstacle(filepath: String): Unit = {
-//    val labMapRepr = Reader.read(filepath)
-//    val labMap = LabMap(labMapRepr)
-//    val guard = labMapRepr.initGuard()
+  def findAllLoopingRouteAfterAddingOneObstacle(filepath: String): Unit = {
+    val labMapRepr = Reader.read(filepath)
+    val labMap = LabMap(labMapRepr)
+    val guard = labMapRepr.initGuard()
+    val availablePositionsToPlaceAnObstacle: Seq[Point] =
+      labMap.spacesPositions
+      .filter { p => guard.position != p }
+    val mutantMaps = availablePositionsToPlaceAnObstacle.map { p => labMap.newMutantByAddingOneObstacle(p) }
+    val mutantMapsResults = mutantMaps.map { mutantMap =>
+      val guardCopy = guard.copy()
+      val repr1 = mutantMap.toReprV1
+      val result = guardCopy.move(mutantMap)
+      val repr2 = mutantMap.toReprV1
+      result
+    }
+    val loopingRouteResults = mutantMapsResults.filter {
+      case LoopingRoute(_, _) => true
+      case _ => false
+    }
+    loopingRouteResults.foreach { case loopingRoute =>
+      println(s"Looping route found: $loopingRoute")
+    }
+    println("Number of looping routes found: " + loopingRouteResults.length)
 //    val loopingRoutes = ArrayBuffer[LoopingRoute]()
 //    while (loopingRoutes.isEmpty) {
 //      val result = guard.move(labMap)
@@ -168,12 +208,12 @@ object GuardGallivant {
 //      }
 //    }
 //    println(s"First looping route found: ${loopingRoutes.head}")
-//  }
+  }
 }
 
-object Main {
+object MainDay6 {
   def main(args: Array[String]): Unit = {
-    GuardGallivant.patrolRouteCoverage("day6/puzzle-input.txt")
-//    GuardGallivant.findAllLoopingRouteAfterAddingOneObstacle("day6/map-1.txt")
+//    GuardGallivant.patrolRouteCoverage("day6/puzzle-input.txt")
+    GuardGallivant.findAllLoopingRouteAfterAddingOneObstacle("day6/map-1.txt")
   }
 }

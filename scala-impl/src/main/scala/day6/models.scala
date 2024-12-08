@@ -99,3 +99,9 @@ case class Vector(scalar: Int, direction: Direction) {
 case class DirectedVector(startingPoint: Point, vector: Vector) {
   def endPoint: Point = startingPoint + vector
 }
+
+object BoundaryChecker {
+  def isOutOfBounds(point: Point, dimension: Dimension): Boolean = {
+    point.x < 0 || point.x >= dimension.width || point.y < 0 || point.y >= dimension.height
+  }
+}
