@@ -11,8 +11,11 @@ object AddOperator extends Operator {
 object MultiplyOperator extends Operator {
   override def apply(a: Long, b: Long): Long = a * b
 }
+object ConcatenateOperator extends Operator {
+  override def apply(a: Long, b: Long): Long = (a.toString + b.toString).toLong
+}
 object Operators {
-  val operators: List[Operator] = List(AddOperator, MultiplyOperator)
+  val operators: List[Operator] = List(AddOperator, MultiplyOperator, ConcatenateOperator)
 }
 
 object BinarySet {
@@ -75,6 +78,8 @@ object RestoreOperators {
   }
 
   def main(args: Array[String]): Unit = {
+    // "day7/mini-input.txt" -> part 1: 3749
+    // "day7/mini-input.txt" -> part 2: 11387
     val tuples = Reader.read("day7/puzzle-input.txt")
     val result = tuples
       .filter {
@@ -82,6 +87,6 @@ object RestoreOperators {
       }.map {
         case (input, target) => target
       }.sum
-    println(s"The total calibration result is $result")  // "day7/mini-input.txt" -> 3749
+    println(s"The total calibration result is $result")
   }
 }
