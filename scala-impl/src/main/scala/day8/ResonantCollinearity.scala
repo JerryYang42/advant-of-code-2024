@@ -55,9 +55,7 @@ object ResonantCollinearity {
       (antenna, pairs) <- antennaPositionPairsMap
       (point1, point2) <- pairs
     } {
-      val potentialAntinodes = Seq(
-        point2 + Vector(point1, point2),
-        point1 + Vector(point2, point1))
+      val potentialAntinodes = potentialAntinodesPositionsV2((point1, point2), antinodeBoard.matrix.dimension)
       potentialAntinodes.foreach { potentialAntinode =>
         try {
           if (antinodeBoard.matrix.get(potentialAntinode.x, potentialAntinode.y) == SpaceElem) {
@@ -74,6 +72,32 @@ object ResonantCollinearity {
       }
     }
     antinodeBoard
+  }
+
+  private def potentialAntinodesPositionsV1(antennasPositionPair: (Point, Point)): Seq[Point] = {
+    val pair = antennasPositionPair
+    Seq(
+      pair._2 + Vector(pair._1, pair._2),
+      pair._1 + Vector(pair._2, pair._1)
+    )
+  }
+  private def potentialAntinodesPositionsV2(antennasPositionPair: (Point, Point), dimension: Dimension): Seq[Point] = {
+    val pair = antennasPositionPair
+    var result: Set[Point] = Set.empty
+    Seq(
+      (pair._2, Vector(pair._1, pair._2)),
+      (pair._1, Vector(pair._2, pair._1))
+    ).foreach { case (startingPosition, vector) =>
+      for {
+        i <- 0 until dimension.diameter
+      } {
+        val endPoint = startingPosition + vector * i
+        if (dimension.contains(endPoint)) {
+          result += endPoint
+        }
+      }
+    }
+    result.toSeq
   }
 
   def main(args: Array[String]): Unit = {

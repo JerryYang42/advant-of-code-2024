@@ -25,6 +25,7 @@ case class Point(x: Int, y: Int) {
 }
 case class Vector(dx: Int, dy: Int) {
   def endPoint: Point = Point(dx, dy)
+  def *(scalar: Int): Vector = Vector(dx * scalar, dy * scalar)
 }
 object Vector {
   def apply(startingPoint: Point, endingPoint: Point): Vector = {
@@ -32,7 +33,12 @@ object Vector {
   }
 }
 
-case class Dimension(width: Int, height: Int)
+case class Dimension(width: Int, height: Int) {
+  def contains(point: Point): Boolean = {
+    point.x >= 0 && point.x < width && point.y >= 0 && point.y < height
+  }
+  val diameter: Int = Math.max(width, height)
+}
 
 case class Matrix[Elem](data: Array[Array[Elem]]) {
   def get(x: Int, y: Int): Elem = {
@@ -52,7 +58,7 @@ case class Matrix[Elem](data: Array[Array[Elem]]) {
   val height: Int = data.length
   val width: Int = data.head.length
   val dimension: Dimension = Dimension(width, height)
-  val diameter: Int = Math.max(width, height)
+  val diameter: Int = dimension.diameter
 }
 
 //trait Direction {
